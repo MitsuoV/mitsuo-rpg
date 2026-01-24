@@ -1,0 +1,5 @@
+{
+  "name": "Pixel Quest RPG",
+  "description": "A modular, text-based RPG with pixel-art aesthetics, tick-based combat, and an extensible architecture.",
+  "requestFramePermissions": []
+}
