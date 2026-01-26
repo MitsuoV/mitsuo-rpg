@@ -16,7 +16,6 @@ export const RetroCard: React.FC<{ children: React.ReactNode; className?: string
 };
 
 // A retro styled button
-// Fix: Added className to the props interface to allow external styling and resolve TS errors
 export const RetroButton: React.FC<{ 
   onClick?: () => void; 
   children: React.ReactNode; 
@@ -56,20 +55,25 @@ export const RetroButton: React.FC<{
 };
 
 // Stat Bar (Health/Mana)
-export const StatBar: React.FC<{ current: number; max: number; color: string; label: string }> = ({ current, max, color, label }) => {
+export const StatBar: React.FC<{ current: number; max: number; color: string; label?: string }> = ({ current, max, color, label }) => {
   const percentage = Math.max(0, Math.min(100, (current / max) * 100));
   
   return (
     <div className="flex flex-col gap-1 w-full">
-      <div className="flex justify-between text-[10px] text-gray-400 uppercase">
-        <span>{label}</span>
-        <span>{Math.floor(current)}/{max}</span>
-      </div>
-      <div className="w-full h-4 bg-gray-900 border-2 border-gray-700 relative">
+      {label && (
+        <div className="flex justify-between text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+          <span>{label}</span>
+          {/* For the HUD, we might pass the numbers in the label itself, or omit the right side if label is complex */}
+          {!label.includes('/') && !label.includes(':') && <span>{Math.floor(current)}/{max}</span>}
+        </div>
+      )}
+      <div className="w-full h-3 md:h-4 bg-gray-950 border-2 border-gray-700 relative overflow-hidden rounded-sm">
         <div 
           className={`h-full ${color} transition-all duration-300`} 
           style={{ width: `${percentage}%` }}
         />
+        {/* Shine effect */}
+        <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
       </div>
     </div>
   );

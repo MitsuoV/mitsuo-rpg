@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,23 +10,84 @@
     <style>
       body {
         font-family: 'Press Start 2P', cursive;
-        background-color: #202020;
+        background-color: #121212;
         color: #e0e0e0;
         image-rendering: pixelated;
+        overflow-x: hidden;
       }
       /* Custom Scrollbar for that retro feel */
       ::-webkit-scrollbar {
-        width: 12px;
+        width: 10px;
       }
       ::-webkit-scrollbar-track {
-        background: #2d2d2d; 
+        background: #1a1a1a; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #555; 
-        border: 2px solid #202020;
+        background: #333; 
+        border: 2px solid #121212;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #777; 
+        background: #444; 
+      }
+
+      @keyframes revolve {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      .revolving-border-container {
+        position: relative;
+        padding: 4px;
+        z-index: 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-center;
+      }
+
+      .revolving-border-active::before {
+        content: '';
+        position: absolute;
+        z-index: -2;
+        left: -50%;
+        top: -50%;
+        width: 200%;
+        height: 200%;
+        background-color: #1a1a1a;
+        background-repeat: no-repeat;
+        background-size: 50% 50%, 50% 50%;
+        background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+        background-image: linear-gradient(#fbbf24, #fbbf24), linear-gradient(#d97706, #d97706), linear-gradient(#fbbf24, #fbbf24), linear-gradient(#d97706, #d97706);
+        animation: revolve 4s linear infinite;
+      }
+
+      .revolving-border-active::after {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        left: 4px;
+        top: 4px;
+        width: calc(100% - 8px);
+        height: calc(100% - 8px);
+        background: #1f2937;
+      }
+
+      /* Marquee for long item names */
+      .marquee-container {
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+      }
+      
+      .marquee-content {
+        display: inline-block;
+        padding-left: 100%;
+        animation: marquee 8s linear infinite;
+      }
+
+      @keyframes marquee {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(-100%, 0); }
       }
     </style>
   <script type="importmap">
@@ -34,7 +96,8 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.0"
   }
 }
 </script>
