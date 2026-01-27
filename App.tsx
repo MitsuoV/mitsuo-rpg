@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Area, CombatState, Enemy, Player, Item, HeroClassData, Skill, CombatRewards, ItemSlot, InventoryItem } from './types';
-import { INITIAL_PLAYER, ITEMS, AREAS, HERO_CLASSES, SKILLS } from './constants';
+import { INITIAL_PLAYER, ITEMS, AREAS, HERO_CLASSES, SKILLS, ASSETS } from './constants';
 import { getExpRequired, getPlayerMaxHp, getPlayerMaxMana, calculatePlayerStats, scaleEnemy, generateDrops, generatePixelSprite } from './gameUtils';
 import { RetroButton, RetroCard, ScreenContainer, StatBar } from './components/Layout';
 import { BattleView } from './components/BattleView';
@@ -13,15 +14,16 @@ import { ProfileView } from './components/ProfileView';
 import { InventoryView } from './components/InventoryView';
 import { DebugMenu } from './components/DebugMenu';
 import { GlobalChat } from './components/GlobalChat';
+import { AssetPreloader } from './components/AssetPreloader';
 import { User, Package, Swords, Trophy, LogOut, ChevronRight, Zap, Maximize, Minimize, Wrench, X, Sparkles, Play } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 type Screen = 'landing' | 'profile' | 'inventory' | 'skills' | 'battle_select' | 'battle' | 'character_select' | 'hero_creation';
 
 const TICK_RATE_MS = 1000; // 1 second per tick for slower, clearer combat
-const LOGO_URL = "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/elyria%20logo.png";
 
 export default function App() {
+  const [isAssetsLoaded, setIsAssetsLoaded] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
@@ -138,8 +140,6 @@ export default function App() {
 
   const navigate = (screen: Screen) => setCurrentScreen(screen);
 
-  // --- Combat Logic ---
-
   const startCombat = (enemyTemplate: Enemy) => {
     const enemy = scaleEnemy(enemyTemplate);
     const { maxMana } = calculatePlayerStats(player);
@@ -149,13 +149,13 @@ export default function App() {
       enemy: enemy,
       currentEnemyHp: enemy.maxHp,
       currentEnemyMana: enemy.maxMana,
-      currentPlayerHp: player.currentHp > 0 ? player.currentHp : player.maxHp, // Don't revive if dead, but should be handled before
-      currentPlayerMana: player.currentMana, // Persist mana
+      currentPlayerHp: player.currentHp > 0 ? player.currentHp : player.maxHp,
+      currentPlayerMana: player.currentMana,
       combatLog: [`Engaged ${enemy.name} (Lvl ${enemy.level})!`],
       tickCount: 0,
       phase: 'active',
       playerNextAttackTick: 0,
-      enemyNextAttackTick: 2, // Slight delay for enemy
+      enemyNextAttackTick: 2,
       skillCooldowns: {}
     });
     navigate('battle');
@@ -172,27 +172,22 @@ export default function App() {
       let phase = prev.phase;
       let rewards = prev.rewards;
 
-      // Player Auto Attack
       if (tick >= prev.playerNextAttackTick) {
          const dmg = Math.max(1, Math.floor(player.baseDamage * (100 / (100 + prev.enemy.physicalResistance))));
          e_hp -= dmg;
          newLog.push(`You hit ${prev.enemy.name} for ${dmg} dmg.`);
       }
 
-      // Enemy Auto Attack
       if (e_hp > 0 && tick >= prev.enemyNextAttackTick) {
          const dmg = Math.max(1, Math.floor(prev.enemy.baseDamage * (100 / (100 + player.armor))));
          p_hp -= dmg;
          newLog.push(`${prev.enemy.name} hits you for ${dmg} dmg.`);
       }
 
-      // Check Death
       if (e_hp <= 0) {
         phase = 'victory';
         e_hp = 0;
         newLog.push(`VICTORY! ${prev.enemy.name} defeated.`);
-        
-        // Generate Rewards
         const exp = prev.enemy.expReward;
         const gold = prev.enemy.goldReward;
         const drops = generateDrops(prev.enemy.level);
@@ -203,20 +198,19 @@ export default function App() {
         newLog.push("DEFEATED! You have fallen...");
       }
 
-      // Regen Mana slowly
       const p_mana = Math.min(player.maxMana, prev.currentPlayerMana + 1);
 
       return {
         ...prev,
         tickCount: tick,
-        combatLog: newLog.slice(-10), // Keep log short
+        combatLog: newLog.slice(-10),
         currentPlayerHp: p_hp,
         currentEnemyHp: e_hp,
         currentPlayerMana: p_mana,
         phase,
         rewards,
-        playerNextAttackTick: tick >= prev.playerNextAttackTick ? tick + 2 : prev.playerNextAttackTick, // Attack every 2 secs
-        enemyNextAttackTick: tick >= prev.enemyNextAttackTick ? tick + 3 : prev.enemyNextAttackTick // Enemy attacks every 3 secs
+        playerNextAttackTick: tick >= prev.playerNextAttackTick ? tick + 2 : prev.playerNextAttackTick,
+        enemyNextAttackTick: tick >= prev.enemyNextAttackTick ? tick + 3 : prev.enemyNextAttackTick
       };
     });
   }, [player.baseDamage, player.armor, player.maxMana]);
@@ -234,42 +228,28 @@ export default function App() {
 
   const handleUseSkill = (skillId: string) => {
     if (combatState.phase !== 'active' || !combatState.enemy) return;
-    
     const skill = SKILLS.find(s => s.id === skillId);
     if (!skill) return;
-
     if (combatState.currentPlayerMana < skill.cost) {
       setCombatState(prev => ({...prev, combatLog: [...prev.combatLog, "Not enough mana!"]}));
       return;
     }
-
-    // Cooldown check
     if ((combatState.skillCooldowns[skillId] || 0) > combatState.tickCount) return;
 
     setCombatState(prev => {
        if (!prev.enemy) return prev;
-       
        let dmg = player.baseDamage * skill.damageMultiplier * (1 + player.skillPower);
-       // Resistance Calculation
        const res = skill.isMagical ? prev.enemy.magicalResistance : prev.enemy.physicalResistance;
        dmg = Math.max(1, Math.floor(dmg * (100 / (100 + res))));
-
        const newEnemyHp = prev.currentEnemyHp - dmg;
        const newLog = [...prev.combatLog, `You cast ${skill.name} for ${dmg} damage!`];
-       
-       // Handle Kill via Skill
        let phase = prev.phase;
        let rewards = prev.rewards;
        if (newEnemyHp <= 0) {
           phase = 'victory';
           newLog.push(`VICTORY! ${prev.enemy.name} defeated.`);
-          rewards = { 
-            exp: prev.enemy.expReward, 
-            gold: prev.enemy.goldReward, 
-            items: generateDrops(prev.enemy.level) 
-          };
+          rewards = { exp: prev.enemy.expReward, gold: prev.enemy.goldReward, items: generateDrops(prev.enemy.level) };
        }
-
        return {
          ...prev,
          currentEnemyHp: Math.max(0, newEnemyHp),
@@ -277,72 +257,45 @@ export default function App() {
          combatLog: newLog.slice(-10),
          phase,
          rewards,
-         skillCooldowns: {
-           ...prev.skillCooldowns,
-           [skillId]: prev.tickCount + skill.cooldown
-         }
+         skillCooldowns: { ...prev.skillCooldowns, [skillId]: prev.tickCount + skill.cooldown }
        };
     });
   };
 
   const handleLeaveCombat = () => {
     const heroClass = HERO_CLASSES.find(c => c.name === player.heroClass) || HERO_CLASSES[0];
-    
-    // Apply rewards and replenish if victory
     if (combatState.phase === 'victory' && combatState.rewards) {
        const newExp = player.exp + combatState.rewards.exp;
        const newGold = player.gold + combatState.rewards.gold;
        const newInventory = [...player.inventory, ...(combatState.rewards.items || [])];
-       
        const req = getExpRequired(player.level);
        let finalLevel = player.level;
        let finalExp = newExp;
-       
-       if (newExp >= req) {
-         finalLevel++;
-         finalExp = newExp - req;
-       }
-
-       // Calculate new Max stats to ensure full replenishment to current max
+       if (newExp >= req) { finalLevel++; finalExp = newExp - req; }
        const newMaxHp = getPlayerMaxHp(finalLevel, heroClass.stats.hp);
        const { maxMana: newMaxMana } = calculatePlayerStats({ ...player, level: finalLevel, inventory: newInventory });
-
-       savePlayerData({
-         ...player,
-         level: finalLevel,
-         exp: finalExp,
-         gold: newGold,
-         inventory: newInventory,
-         maxHp: newMaxHp,
-         currentHp: newMaxHp,
-         currentMana: newMaxMana
-       });
+       savePlayerData({ ...player, level: finalLevel, exp: finalExp, gold: newGold, inventory: newInventory, maxHp: newMaxHp, currentHp: newMaxHp, currentMana: newMaxMana });
     } else {
-       // Replenish stats even on defeat or flee as requested
        const { maxMana } = calculatePlayerStats(player);
-       savePlayerData({
-         ...player,
-         currentHp: player.maxHp,
-         currentMana: maxMana
-       });
+       savePlayerData({ ...player, currentHp: player.maxHp, currentMana: maxMana });
     }
-
-    setCombatState(prev => ({ ...prev, isActive: false, phase: 'defeat' })); // Reset
+    setCombatState(prev => ({ ...prev, isActive: false, phase: 'defeat' }));
     navigate('landing');
   };
 
-  // ... rest of the file stays same
-  // --- Render Title Screen ---
+  if (!isAssetsLoaded) {
+    return <AssetPreloader onComplete={() => setIsAssetsLoaded(true)} />;
+  }
+
   if (!hasStarted) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Mystical Background Layers */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-[#050505] to-black opacity-80"></div>
         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-pulse"></div>
         
         <div className="relative z-10 flex flex-col items-center gap-16 max-w-4xl w-full">
            <div className="logo-float w-full flex items-center justify-center px-4">
-              <img src={LOGO_URL} alt="Elyria RPG Logo" className="w-full max-w-[650px] md:max-w-[800px] h-auto object-contain pixelated" />
+              <img src={ASSETS.LOGO} alt="Elyria RPG Logo" className="w-full max-w-[650px] md:max-w-[800px] h-auto object-contain pixelated" />
            </div>
            
            <div className="flex flex-col items-center gap-4 w-full max-w-xs animate-in slide-in-from-bottom-8 duration-1000">
@@ -365,8 +318,6 @@ export default function App() {
     );
   }
 
-  // --- Main Render Logic ---
-
   const renderLanding = () => (
     <ScreenContainer>
       <div className="flex flex-col items-center gap-8 text-center relative w-full">
@@ -379,9 +330,8 @@ export default function App() {
         </button>
 
         <div className="space-y-6 w-full flex flex-col items-center pt-8">
-          {/* Main Menu Logo - Static and Smaller */}
           <div className="w-full max-w-[200px] md:max-w-[280px] mb-2 opacity-90">
-            <img src={LOGO_URL} alt="Elyria RPG" className="w-full h-auto object-contain pixelated" />
+            <img src={ASSETS.LOGO} alt="Elyria RPG" className="w-full h-auto object-contain pixelated" />
           </div>
           
           <div className="bg-slate-900/80 p-4 border-2 border-slate-700 max-w-sm w-full mx-auto shadow-xl backdrop-blur-sm relative z-10">
@@ -419,7 +369,7 @@ export default function App() {
     <ScreenContainer>
       <div className="flex flex-col items-center gap-2 text-center w-full">
         <div className="w-full max-w-[400px] md:max-w-[550px]">
-          <img src={LOGO_URL} alt="Elyria RPG" className="w-full h-auto object-contain pixelated" />
+          <img src={ASSETS.LOGO} alt="Elyria RPG" className="w-full h-auto object-contain pixelated" />
         </div>
         <AuthView />
       </div>

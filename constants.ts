@@ -1,6 +1,12 @@
 
 import { Area, Enemy, Item, Player, Skill, HeroClassData } from './types';
 
+export const ASSETS = {
+  LOGO: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/elyria%20logo.png",
+  SLIME_SPRITESHEET: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/spritesheet_1769528145290.png",
+  STARDUST: "https://www.transparenttextures.com/patterns/stardust.png"
+};
+
 export const HERO_CLASSES: HeroClassData[] = [
   {
     id: 'warrior',

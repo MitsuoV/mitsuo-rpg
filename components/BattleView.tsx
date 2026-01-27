@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { CombatState, Player, Skill, Item } from '../types';
 import { RetroButton, StatBar } from './Layout';
-import { SKILLS, ITEMS } from '../constants';
+import { SKILLS, ITEMS, ASSETS } from '../constants';
 import { Zap, Trophy, Coins, Box } from 'lucide-react';
 import { generatePixelSprite } from '../gameUtils';
 
@@ -20,6 +20,7 @@ export const BattleView: React.FC<BattleViewProps> = ({
   onUseSkill
 }) => {
   const [hoveredSkill, setHoveredSkill] = useState<Skill | null>(null);
+  const [frame, setFrame] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,6 +28,24 @@ export const BattleView: React.FC<BattleViewProps> = ({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [combatState.combatLog]);
+
+  // Spritesheet animation logic for Slime
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    
+    if (combatState.enemy?.id === 'slime' && combatState.phase === 'active') {
+      // 25 FPS = 40ms interval
+      interval = setInterval(() => {
+        setFrame(f => (f + 1) % 21);
+      }, 40);
+    } else {
+      setFrame(0);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [combatState.enemy?.id, combatState.phase]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,6 +79,9 @@ export const BattleView: React.FC<BattleViewProps> = ({
     </div>
   );
 
+  const posX = (frame % 4) * (100 / 3);
+  const posY = Math.floor(frame / 4) * (100 / 5);
+
   return (
     <div className="relative h-[80vh] w-full flex flex-col justify-between">
       
@@ -78,8 +100,24 @@ export const BattleView: React.FC<BattleViewProps> = ({
            </div>
         </div>
 
-        <div className="relative z-10">
-          <img src={enemy.spriteUrl} alt={enemy.name} className={`w-64 h-64 md:w-80 md:h-80 object-contain pixelated drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-all duration-500 ${currentEnemyHp <= 0 ? 'opacity-0 scale-50 filter grayscale blur-sm' : ''}`} />
+        <div className="relative z-10 flex items-center justify-center">
+          {enemy.id === 'slime' ? (
+            <div 
+              className={`w-64 h-64 md:w-80 md:h-80 bg-no-repeat pixelated drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${currentEnemyHp <= 0 ? 'opacity-0 scale-50 filter grayscale blur-sm transition-all duration-700' : ''}`}
+              style={{
+                backgroundImage: `url(${ASSETS.SLIME_SPRITESHEET})`,
+                backgroundSize: '400% 600%',
+                backgroundPosition: `${posX}% ${posY}%`,
+                imageRendering: 'pixelated'
+              }}
+            />
+          ) : (
+            <img 
+              src={enemy.spriteUrl} 
+              alt={enemy.name} 
+              className={`w-64 h-64 md:w-80 md:h-80 object-contain pixelated drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-all duration-500 ${currentEnemyHp <= 0 ? 'opacity-0 scale-50 filter grayscale blur-sm' : ''}`} 
+            />
+          )}
         </div>
 
         <div className="mt-4 w-48 md:w-64 space-y-1 z-10 bg-gray-900/40 p-2 rounded-lg backdrop-blur-sm">
