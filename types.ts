@@ -96,6 +96,7 @@ export interface Area {
   description: string;
   levelRange: string;
   enemies: Enemy[];
+  backgroundImage?: string;
 }
 
 // Combat Types

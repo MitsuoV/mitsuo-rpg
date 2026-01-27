@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { Player } from '../types';
@@ -100,7 +99,7 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ player }) => {
       console.error("Failed to send message:", error.message);
       // Optional: Restore input if failed
       setInput(textPayload);
-      alert("Comms offline. Check frequency (Database).");
+      alert("Global Chat offline. Check connection.");
     }
   };
 
@@ -108,17 +107,17 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ player }) => {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 left-4 z-50 bg-gray-900 border-2 border-gray-600 p-3 text-yellow-500 hover:border-yellow-400 hover:text-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex items-center gap-3 transition-transform hover:-translate-y-1 active:translate-y-0"
+        className="fixed bottom-4 left-4 z-50 bg-gray-900 border-2 border-gray-600 p-2 text-yellow-500 hover:border-yellow-400 hover:text-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex items-center gap-3 transition-transform hover:-translate-y-1 active:translate-y-0"
       >
         <div className="relative">
-          <MessageSquare size={20} />
+          <MessageSquare size={16} />
           {unreadCount > 0 && (
             <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-bounce border border-gray-900">
               {unreadCount > 9 ? '!' : unreadCount}
             </div>
           )}
         </div>
-        <span className="text-[10px] uppercase font-bold tracking-widest hidden md:block">Global Comms</span>
+        <span className="text-[10px] uppercase font-bold tracking-widest hidden md:block">Global Chat</span>
       </button>
     );
   }
@@ -129,7 +128,7 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ player }) => {
       <div className="bg-gray-800 p-2 border-b-2 border-gray-700 flex justify-between items-center select-none">
         <div className="flex items-center gap-2 text-[10px] font-bold text-yellow-500 uppercase tracking-wider">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]"/> 
-          Global Frequency
+          Global Chat
         </div>
         <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition-colors">
           <Minimize2 size={16} />
@@ -140,7 +139,7 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ player }) => {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-950/80 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
         {messages.length === 0 && (
             <div className="h-full flex items-center justify-center text-[8px] text-gray-600 uppercase tracking-widest text-center opacity-50">
-                Establishing Uplink...<br/>(Loading History)
+                Syncing Global Chat...<br/>(Loading History)
             </div>
         )}
         {messages.map((msg) => (
@@ -167,7 +166,7 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ player }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className="flex-1 bg-gray-950 border border-gray-600 text-gray-200 text-[10px] px-2 py-2 outline-none focus:border-yellow-500 placeholder-gray-700 font-mono"
-          placeholder="Transmit message..."
+          placeholder="Global Chat message..."
           maxLength={140}
         />
         <button 

@@ -1,10 +1,10 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Area, CombatState, Enemy, Player, Item, HeroClassData, Skill, CombatRewards, ItemSlot, InventoryItem } from './types';
 import { INITIAL_PLAYER, ITEMS, AREAS, HERO_CLASSES, SKILLS } from './constants';
 import { getExpRequired, getPlayerMaxHp, getPlayerMaxMana, calculatePlayerStats, scaleEnemy, generateDrops, generatePixelSprite } from './gameUtils';
 import { RetroButton, RetroCard, ScreenContainer, StatBar } from './components/Layout';
 import { BattleView } from './components/BattleView';
+import { BattleSelectView } from './components/BattleSelectView';
 import { AuthView } from './components/AuthView';
 import { HeroCreationView } from './components/HeroCreationView';
 import { CharacterSelectView } from './components/CharacterSelectView';
@@ -18,7 +18,7 @@ import { supabase } from './supabaseClient';
 
 type Screen = 'landing' | 'profile' | 'inventory' | 'skills' | 'battle_select' | 'battle' | 'character_select' | 'hero_creation';
 
-const TICK_RATE_MS = 500;
+const TICK_RATE_MS = 1000; // 1 second per tick for slower, clearer combat
 const LOGO_URL = "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/elyria%20logo.png";
 
 export default function App() {
@@ -46,6 +46,8 @@ export default function App() {
     enemyNextAttackTick: 0,
     skillCooldowns: {}
   });
+
+  const combatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -136,6 +138,200 @@ export default function App() {
 
   const navigate = (screen: Screen) => setCurrentScreen(screen);
 
+  // --- Combat Logic ---
+
+  const startCombat = (enemyTemplate: Enemy) => {
+    const enemy = scaleEnemy(enemyTemplate);
+    const { maxMana } = calculatePlayerStats(player);
+    
+    setCombatState({
+      isActive: true,
+      enemy: enemy,
+      currentEnemyHp: enemy.maxHp,
+      currentEnemyMana: enemy.maxMana,
+      currentPlayerHp: player.currentHp > 0 ? player.currentHp : player.maxHp, // Don't revive if dead, but should be handled before
+      currentPlayerMana: player.currentMana, // Persist mana
+      combatLog: [`Engaged ${enemy.name} (Lvl ${enemy.level})!`],
+      tickCount: 0,
+      phase: 'active',
+      playerNextAttackTick: 0,
+      enemyNextAttackTick: 2, // Slight delay for enemy
+      skillCooldowns: {}
+    });
+    navigate('battle');
+  };
+
+  const processCombatTick = useCallback(() => {
+    setCombatState(prev => {
+      if (prev.phase !== 'active' || !prev.enemy) return prev;
+
+      let newLog = [...prev.combatLog];
+      let p_hp = prev.currentPlayerHp;
+      let e_hp = prev.currentEnemyHp;
+      const tick = prev.tickCount + 1;
+      let phase = prev.phase;
+      let rewards = prev.rewards;
+
+      // Player Auto Attack
+      if (tick >= prev.playerNextAttackTick) {
+         const dmg = Math.max(1, Math.floor(player.baseDamage * (100 / (100 + prev.enemy.physicalResistance))));
+         e_hp -= dmg;
+         newLog.push(`You hit ${prev.enemy.name} for ${dmg} dmg.`);
+      }
+
+      // Enemy Auto Attack
+      if (e_hp > 0 && tick >= prev.enemyNextAttackTick) {
+         const dmg = Math.max(1, Math.floor(prev.enemy.baseDamage * (100 / (100 + player.armor))));
+         p_hp -= dmg;
+         newLog.push(`${prev.enemy.name} hits you for ${dmg} dmg.`);
+      }
+
+      // Check Death
+      if (e_hp <= 0) {
+        phase = 'victory';
+        e_hp = 0;
+        newLog.push(`VICTORY! ${prev.enemy.name} defeated.`);
+        
+        // Generate Rewards
+        const exp = prev.enemy.expReward;
+        const gold = prev.enemy.goldReward;
+        const drops = generateDrops(prev.enemy.level);
+        rewards = { exp, gold, items: drops };
+      } else if (p_hp <= 0) {
+        phase = 'defeat';
+        p_hp = 0;
+        newLog.push("DEFEATED! You have fallen...");
+      }
+
+      // Regen Mana slowly
+      const p_mana = Math.min(player.maxMana, prev.currentPlayerMana + 1);
+
+      return {
+        ...prev,
+        tickCount: tick,
+        combatLog: newLog.slice(-10), // Keep log short
+        currentPlayerHp: p_hp,
+        currentEnemyHp: e_hp,
+        currentPlayerMana: p_mana,
+        phase,
+        rewards,
+        playerNextAttackTick: tick >= prev.playerNextAttackTick ? tick + 2 : prev.playerNextAttackTick, // Attack every 2 secs
+        enemyNextAttackTick: tick >= prev.enemyNextAttackTick ? tick + 3 : prev.enemyNextAttackTick // Enemy attacks every 3 secs
+      };
+    });
+  }, [player.baseDamage, player.armor, player.maxMana]);
+
+  useEffect(() => {
+    if (combatState.isActive && combatState.phase === 'active') {
+      combatTimerRef.current = setInterval(processCombatTick, TICK_RATE_MS);
+    } else {
+      if (combatTimerRef.current) clearInterval(combatTimerRef.current);
+    }
+    return () => {
+      if (combatTimerRef.current) clearInterval(combatTimerRef.current);
+    };
+  }, [combatState.isActive, combatState.phase, processCombatTick]);
+
+  const handleUseSkill = (skillId: string) => {
+    if (combatState.phase !== 'active' || !combatState.enemy) return;
+    
+    const skill = SKILLS.find(s => s.id === skillId);
+    if (!skill) return;
+
+    if (combatState.currentPlayerMana < skill.cost) {
+      setCombatState(prev => ({...prev, combatLog: [...prev.combatLog, "Not enough mana!"]}));
+      return;
+    }
+
+    // Cooldown check
+    if ((combatState.skillCooldowns[skillId] || 0) > combatState.tickCount) return;
+
+    setCombatState(prev => {
+       if (!prev.enemy) return prev;
+       
+       let dmg = player.baseDamage * skill.damageMultiplier * (1 + player.skillPower);
+       // Resistance Calculation
+       const res = skill.isMagical ? prev.enemy.magicalResistance : prev.enemy.physicalResistance;
+       dmg = Math.max(1, Math.floor(dmg * (100 / (100 + res))));
+
+       const newEnemyHp = prev.currentEnemyHp - dmg;
+       const newLog = [...prev.combatLog, `You cast ${skill.name} for ${dmg} damage!`];
+       
+       // Handle Kill via Skill
+       let phase = prev.phase;
+       let rewards = prev.rewards;
+       if (newEnemyHp <= 0) {
+          phase = 'victory';
+          newLog.push(`VICTORY! ${prev.enemy.name} defeated.`);
+          rewards = { 
+            exp: prev.enemy.expReward, 
+            gold: prev.enemy.goldReward, 
+            items: generateDrops(prev.enemy.level) 
+          };
+       }
+
+       return {
+         ...prev,
+         currentEnemyHp: Math.max(0, newEnemyHp),
+         currentPlayerMana: prev.currentPlayerMana - skill.cost,
+         combatLog: newLog.slice(-10),
+         phase,
+         rewards,
+         skillCooldowns: {
+           ...prev.skillCooldowns,
+           [skillId]: prev.tickCount + skill.cooldown
+         }
+       };
+    });
+  };
+
+  const handleLeaveCombat = () => {
+    const heroClass = HERO_CLASSES.find(c => c.name === player.heroClass) || HERO_CLASSES[0];
+    
+    // Apply rewards and replenish if victory
+    if (combatState.phase === 'victory' && combatState.rewards) {
+       const newExp = player.exp + combatState.rewards.exp;
+       const newGold = player.gold + combatState.rewards.gold;
+       const newInventory = [...player.inventory, ...(combatState.rewards.items || [])];
+       
+       const req = getExpRequired(player.level);
+       let finalLevel = player.level;
+       let finalExp = newExp;
+       
+       if (newExp >= req) {
+         finalLevel++;
+         finalExp = newExp - req;
+       }
+
+       // Calculate new Max stats to ensure full replenishment to current max
+       const newMaxHp = getPlayerMaxHp(finalLevel, heroClass.stats.hp);
+       const { maxMana: newMaxMana } = calculatePlayerStats({ ...player, level: finalLevel, inventory: newInventory });
+
+       savePlayerData({
+         ...player,
+         level: finalLevel,
+         exp: finalExp,
+         gold: newGold,
+         inventory: newInventory,
+         maxHp: newMaxHp,
+         currentHp: newMaxHp,
+         currentMana: newMaxMana
+       });
+    } else {
+       // Replenish stats even on defeat or flee as requested
+       const { maxMana } = calculatePlayerStats(player);
+       savePlayerData({
+         ...player,
+         currentHp: player.maxHp,
+         currentMana: maxMana
+       });
+    }
+
+    setCombatState(prev => ({ ...prev, isActive: false, phase: 'defeat' })); // Reset
+    navigate('landing');
+  };
+
+  // ... rest of the file stays same
   // --- Render Title Screen ---
   if (!hasStarted) {
     return (
@@ -245,7 +441,8 @@ export default function App() {
         savePlayerData({ ...player, equipment: newEquip });
       }} />}
       {currentScreen === 'skills' && <ScreenContainer><SkillsView player={player} onSave={savePlayerData} onBack={() => navigate('landing')} /></ScreenContainer>}
-      {currentScreen === 'battle_select' && <ScreenContainer><div className="text-center py-20 text-gray-500 uppercase text-xs">Battle Select...</div><RetroButton onClick={() => navigate('landing')}>Back</RetroButton></ScreenContainer>}
+      {currentScreen === 'battle_select' && <BattleSelectView onBack={() => navigate('landing')} onSelectEnemy={startCombat} />}
+      {currentScreen === 'battle' && <ScreenContainer><BattleView player={player} combatState={combatState} onUseSkill={handleUseSkill} onLeave={handleLeaveCombat} /></ScreenContainer>}
       {currentScreen === 'character_select' && <ScreenContainer><CharacterSelectView heroes={allHeroes} onSelect={(h) => { setPlayer(h); navigate('landing'); }} onCreate={() => navigate('hero_creation')} onLogout={() => supabase.auth.signOut()} /></ScreenContainer>}
       {currentScreen === 'hero_creation' && <ScreenContainer><HeroCreationView onComplete={(h) => { const updated = [...allHeroes, h]; setAllHeroes(updated); setPlayer(h); navigate('landing'); }} isLoading={false} onCancel={() => navigate('character_select')} /></ScreenContainer>}
       {showDebug && <DebugMenu player={player} onUpdate={savePlayerData} onClose={() => setShowDebug(false)} />}

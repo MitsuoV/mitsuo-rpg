@@ -146,6 +146,7 @@ export const AREAS: Area[] = [
       { ...ENEMIES.slime, level: 2 },
       { ...ENEMIES.wolf, level: 3 },
       { ...ENEMIES.goblin, level: 5 }
-    ]
+    ],
+    backgroundImage: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/sunny%20plains.jpeg'
   }
 ];
