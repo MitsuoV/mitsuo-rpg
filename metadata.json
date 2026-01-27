@@ -1,5 +1,5 @@
 {
-  "name": "Pixel Quest RPG",
+  "name": "Elyria RPG",
   "description": "A modular, text-based RPG with pixel-art aesthetics, tick-based combat, and an extensible architecture.",
   "requestFramePermissions": []
 }

@@ -4,9 +4,9 @@ import React from 'react';
 // A container with a retro border style
 export const RetroCard: React.FC<{ children: React.ReactNode; className?: string; title?: string }> = ({ children, className = '', title }) => {
   return (
-    <div className={`relative bg-gray-800 border-4 border-gray-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] p-4 ${className}`}>
+    <div className={`relative bg-slate-900/90 border-4 border-slate-700 shadow-[0_0_20px_rgba(0,0,0,0.5)] p-4 backdrop-blur-sm ${className}`}>
       {title && (
-        <div className="absolute -top-4 left-4 bg-gray-800 px-2 border-2 border-gray-600 text-yellow-400 text-xs font-bold uppercase tracking-wider">
+        <div className="absolute -top-4 left-4 bg-slate-900 px-3 py-1 border-2 border-slate-600 text-yellow-500 text-[10px] md:text-xs font-bold uppercase tracking-widest shadow-lg">
           {title}
         </div>
       )}
@@ -23,20 +23,21 @@ export const RetroButton: React.FC<{
   variant?: 'primary' | 'danger' | 'success';
   className?: string;
 }> = ({ onClick, children, disabled, variant = 'primary', className = '' }) => {
-  let bgClass = "bg-blue-600 hover:bg-blue-500";
-  let borderClass = "border-blue-800";
+  // Default: Mystical Blue/Indigo
+  let bgClass = "bg-indigo-900 hover:bg-indigo-800 text-yellow-100";
+  let borderClass = "border-indigo-950";
   
   if (variant === 'danger') {
-    bgClass = "bg-red-600 hover:bg-red-500";
-    borderClass = "border-red-800";
+    bgClass = "bg-red-900/80 hover:bg-red-800 text-red-100";
+    borderClass = "border-red-950";
   } else if (variant === 'success') {
-    bgClass = "bg-green-600 hover:bg-green-500";
-    borderClass = "border-green-800";
+    bgClass = "bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100";
+    borderClass = "border-emerald-950";
   }
 
   if (disabled) {
-    bgClass = "bg-gray-600 cursor-not-allowed";
-    borderClass = "border-gray-700";
+    bgClass = "bg-slate-800 text-slate-500 cursor-not-allowed";
+    borderClass = "border-slate-900";
   }
 
   return (
@@ -44,9 +45,11 @@ export const RetroButton: React.FC<{
       onClick={disabled ? undefined : onClick}
       className={`
         ${bgClass} ${borderClass} ${className}
-        text-white font-bold py-3 px-6 
-        border-b-4 border-r-4 active:border-b-0 active:border-r-0 active:mt-1 active:ml-1 active:mr-[-1px] active:mb-[-1px]
+        font-bold py-3 px-6 
+        border-2 border-b-4 
+        active:border-b-2 active:mt-0.5
         uppercase tracking-widest text-xs transition-all
+        shadow-lg
       `}
     >
       {children}
@@ -61,19 +64,19 @@ export const StatBar: React.FC<{ current: number; max: number; color: string; la
   return (
     <div className="flex flex-col gap-1 w-full">
       {label && (
-        <div className="flex justify-between text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+        <div className="flex justify-between text-[10px] text-slate-400 uppercase font-bold tracking-wider">
           <span>{label}</span>
-          {/* For the HUD, we might pass the numbers in the label itself, or omit the right side if label is complex */}
           {!label.includes('/') && !label.includes(':') && <span>{Math.floor(current)}/{max}</span>}
         </div>
       )}
-      <div className="w-full h-3 md:h-4 bg-gray-950 border-2 border-gray-700 relative overflow-hidden rounded-sm">
+      <div className="w-full h-3 md:h-4 bg-slate-950 border border-slate-700 relative overflow-hidden">
         <div 
-          className={`h-full ${color} transition-all duration-300`} 
+          className={`h-full ${color} transition-all duration-300 relative`} 
           style={{ width: `${percentage}%` }}
-        />
-        {/* Shine effect */}
-        <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
+        >
+          {/* Shine effect */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-white/20"></div>
+        </div>
       </div>
     </div>
   );
@@ -81,8 +84,8 @@ export const StatBar: React.FC<{ current: number; max: number; color: string; la
 
 export const ScreenContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen text-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl animate-in fade-in duration-500">
         {children}
       </div>
     </div>
