@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ASSETS, HERO_CLASSES, ENEMIES, AREAS } from '../constants';
+import { ASSETS, HERO_CLASSES, ENEMIES, AREAS, ITEMS } from '../constants';
 
 interface AssetPreloaderProps {
   onComplete: () => void;
@@ -17,7 +17,8 @@ export const AssetPreloader: React.FC<AssetPreloaderProps> = ({ onComplete }) =>
       ASSETS.STARDUST,
       ...HERO_CLASSES.map(c => c.icon).filter(i => i.startsWith('http')),
       ...Object.values(ENEMIES).map(e => e.spriteUrl),
-      ...AREAS.map(a => a.backgroundImage || '')
+      ...AREAS.map(a => a.backgroundImage || ''),
+      ...ITEMS.map(i => i.spriteUrl || '').filter(Boolean)
     ].filter(Boolean);
 
     let loadedCount = 0;
@@ -41,6 +42,7 @@ export const AssetPreloader: React.FC<AssetPreloaderProps> = ({ onComplete }) =>
         if (url.includes('logo')) setStatus('Fetching Realm Sigils...');
         else if (url.includes('spritesheet')) setStatus('Calibrating Slime Textures...');
         else if (url.includes('plains')) setStatus('Manifesting World Map...');
+        else if (url.includes('rusty%20boot')) setStatus('Polishing Iron Footwear...');
         else setStatus('Caching Arcane Visuals...');
 
         await loadAsset(url);

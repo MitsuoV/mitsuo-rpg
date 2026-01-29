@@ -169,7 +169,8 @@ export default function App() {
       let p_hp = prev.currentPlayerHp;
       let e_hp = prev.currentEnemyHp;
       const tick = prev.tickCount + 1;
-      let phase = prev.phase;
+      // Fix: Explicitly type phase to 'active' | 'victory' | 'defeat' to allow re-assignment after guard narrowing
+      let phase: 'active' | 'victory' | 'defeat' = prev.phase;
       let rewards = prev.rewards;
 
       if (tick >= prev.playerNextAttackTick) {
@@ -243,7 +244,8 @@ export default function App() {
        dmg = Math.max(1, Math.floor(dmg * (100 / (100 + res))));
        const newEnemyHp = prev.currentEnemyHp - dmg;
        const newLog = [...prev.combatLog, `You cast ${skill.name} for ${dmg} damage!`];
-       let phase = prev.phase;
+       // Fix: Explicitly type phase to avoid narrowing issues during transition
+       let phase: 'active' | 'victory' | 'defeat' = prev.phase;
        let rewards = prev.rewards;
        if (newEnemyHp <= 0) {
           phase = 'victory';
@@ -282,41 +284,6 @@ export default function App() {
     setCombatState(prev => ({ ...prev, isActive: false, phase: 'defeat' }));
     navigate('landing');
   };
-
-  if (!isAssetsLoaded) {
-    return <AssetPreloader onComplete={() => setIsAssetsLoaded(true)} />;
-  }
-
-  if (!hasStarted) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-[#050505] to-black opacity-80"></div>
-        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-pulse"></div>
-        
-        <div className="relative z-10 flex flex-col items-center gap-16 max-w-4xl w-full">
-           <div className="logo-float w-full flex items-center justify-center px-4">
-              <img src={ASSETS.LOGO} alt="Elyria RPG Logo" className="w-full max-w-[650px] md:max-w-[800px] h-auto object-contain pixelated" />
-           </div>
-           
-           <div className="flex flex-col items-center gap-4 w-full max-w-xs animate-in slide-in-from-bottom-8 duration-1000">
-             <button 
-               onClick={() => setHasStarted(true)}
-               className="group relative w-full bg-transparent overflow-hidden py-4 px-8 border-2 border-yellow-600/50 hover:border-yellow-400 text-yellow-500 font-bold uppercase tracking-[0.2em] transition-all hover:bg-yellow-900/20 active:scale-95"
-             >
-                <span className="relative z-10 flex items-center justify-center gap-3">
-                  <Play size={16} className="fill-current" /> Enter Realm
-                </span>
-                <div className="absolute inset-0 bg-yellow-500/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-             </button>
-             
-             <div className="text-[9px] text-gray-600 font-mono uppercase tracking-widest">
-                v1.0.0 • Connected
-             </div>
-           </div>
-        </div>
-      </div>
-    );
-  }
 
   const renderLanding = () => (
     <ScreenContainer>

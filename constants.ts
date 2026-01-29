@@ -4,7 +4,20 @@ import { Area, Enemy, Item, Player, Skill, HeroClassData } from './types';
 export const ASSETS = {
   LOGO: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/elyria%20logo.png",
   SLIME_SPRITESHEET: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/spritesheet_1769528145290.png",
-  STARDUST: "https://www.transparenttextures.com/patterns/stardust.png"
+  STARDUST: "https://www.transparenttextures.com/patterns/stardust.png",
+  RUSTY_BOOTS: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20boot.png",
+  RUSTY_HELM: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20helm.png",
+  RUSTY_PLATE: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20platebody.png",
+  RUSTY_GREAVES: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20leggings.png",
+  RAGGED_HOOD: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20hood.png",
+  RAGGED_ROBE: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20robe.png",
+  RAGGED_TROUSERS: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20trousers.png",
+  RAGGED_BOOTS: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20boots.png",
+  LEATHER_CAP: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_1.png",
+  LEATHER_TUNIC: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_2.png",
+  LEATHER_CHAPS: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_3.png",
+  LEATHER_BOOTS: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_4.png",
+  SHORT_BOW: "https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Short%20bow_128px_1.png"
 };
 
 export const HERO_CLASSES: HeroClassData[] = [
@@ -81,21 +94,21 @@ export const SKILLS: Skill[] = [
 
 export const ITEMS: (Item & { theme?: string })[] = [
   { id: 'potion_small', name: 'Small Potion', description: 'Heals 20 HP', type: 'consumable', slot: 'consumable', icon: '♥', theme: '#ef4444' },
-  { id: 'rusty_helm', name: 'Rusty Helm', description: 'A dented metal helmet.', type: 'armor', slot: 'head', icon: '🪖', levelReq: 1, stats: { armor: 3 }, theme: '#94a3b8' },
-  { id: 'rusty_plate', name: 'Rusty Platebody', description: 'Heavy and covered in rust.', type: 'armor', slot: 'chest', icon: '🥋', levelReq: 1, stats: { armor: 6 }, theme: '#94a3b8' },
-  { id: 'rusty_greaves', name: 'Rusty Greaves', description: 'Protects the shins.', type: 'armor', slot: 'legs', icon: '🦵', levelReq: 1, stats: { armor: 3 }, theme: '#94a3b8' },
-  { id: 'rusty_boots', name: 'Rusty Boots', description: 'Clanking metal boots.', type: 'armor', slot: 'feet', icon: '👢', levelReq: 1, stats: { armor: 2 }, theme: '#94a3b8' },
+  { id: 'rusty_helm', name: 'Rusty Helm', description: 'A dented metal helmet.', type: 'armor', slot: 'head', icon: '🪖', levelReq: 1, stats: { armor: 3 }, theme: '#94a3b8', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20helm.png' },
+  { id: 'rusty_plate', name: 'Rusty Platebody', description: 'Heavy and covered in rust.', type: 'armor', slot: 'chest', icon: '🥋', levelReq: 1, stats: { armor: 6 }, theme: '#94a3b8', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20platebody.png' },
+  { id: 'rusty_greaves', name: 'Rusty Greaves', description: 'Protects the shins.', type: 'armor', slot: 'legs', icon: '🦵', levelReq: 1, stats: { armor: 3 }, theme: '#94a3b8', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20leggings.png' },
+  { id: 'rusty_boots', name: 'Rusty Boots', description: 'Clanking metal boots.', type: 'armor', slot: 'feet', icon: '👢', levelReq: 1, stats: { armor: 2 }, theme: '#94a3b8', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/rusty%20boot.png' },
   { id: 'wooden_sword', name: 'Wooden Sword', description: 'Good for practice.', type: 'weapon', slot: 'mainHand', icon: '⚔️', levelReq: 1, classReq: 'Warrior', stats: { damage: 3 }, theme: '#b45309', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/wooden%20sword.png' },
-  { id: 'leather_cap', name: 'Leather Cap', description: 'Lightweight headgear.', type: 'armor', slot: 'head', icon: '🧢', levelReq: 1, stats: { armor: 1, maxMana: 5 }, theme: '#78350f' },
-  { id: 'leather_tunic', name: 'Leather Tunic', description: 'Standard issue leather armor.', type: 'armor', slot: 'chest', icon: '🧥', levelReq: 1, stats: { armor: 3, maxMana: 10 }, theme: '#78350f' },
-  { id: 'leather_chaps', name: 'Leather Chaps', description: 'Flexible legwear.', type: 'armor', slot: 'legs', icon: '👖', levelReq: 1, stats: { armor: 1, maxMana: 5 }, theme: '#78350f' },
-  { id: 'leather_boots', name: 'Leather Boots', description: 'Sturdy walking boots.', type: 'armor', slot: 'feet', icon: '👞', levelReq: 1, stats: { armor: 1, maxMana: 5 }, theme: '#78350f' },
-  { id: 'short_bow', name: 'Short Bow', description: 'A simple wooden bow.', type: 'weapon', slot: 'mainHand', icon: '🏹', levelReq: 1, classReq: 'Archer', stats: { damage: 3 }, theme: '#4ade80' },
+  { id: 'leather_cap', name: 'Leather Cap', description: 'Lightweight headgear.', type: 'armor', slot: 'head', icon: '🧢', levelReq: 1, stats: { armor: 1, maxMana: 5 }, theme: '#78350f', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_1.png' },
+  { id: 'leather_tunic', name: 'Leather Tunic', description: 'Standard issue leather armor.', type: 'armor', slot: 'chest', icon: '🧥', levelReq: 1, stats: { armor: 3, maxMana: 10 }, theme: '#78350f', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_2.png' },
+  { id: 'leather_chaps', name: 'Leather Chaps', description: 'Flexible legwear.', type: 'armor', slot: 'legs', icon: '👖', levelReq: 1, stats: { armor: 1, maxMana: 5 }, theme: '#78350f', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_3.png' },
+  { id: 'leather_boots', name: 'Leather Boots', description: 'Sturdy walking boots.', type: 'armor', slot: 'feet', icon: '👞', levelReq: 1, stats: { armor: 1, maxMana: 5 }, theme: '#78350f', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Leather%20set_128px_4.png' },
+  { id: 'short_bow', name: 'Short Bow', description: 'A simple wooden bow.', type: 'weapon', slot: 'mainHand', icon: '🏹', levelReq: 1, classReq: 'Archer', stats: { damage: 3 }, theme: '#4ade80', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/Short%20bow_128px_1.png' },
   { id: 'cracked_dagger', name: 'Cracked Dagger', description: 'Sharp enough to cut.', type: 'weapon', slot: 'mainHand', icon: '🗡️', levelReq: 1, classReq: 'Assassin', stats: { damage: 4 }, theme: '#334155', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/cracked%20dagger.png' },
-  { id: 'ragged_hood', name: 'Ragged Hood', description: 'Smells of old books.', type: 'armor', slot: 'head', icon: '🧙', levelReq: 1, stats: { armor: 0, maxMana: 15 }, theme: '#3b82f6' },
-  { id: 'ragged_robe', name: 'Ragged Robe', description: 'Offers little protection.', type: 'armor', slot: 'chest', icon: '👘', levelReq: 1, stats: { armor: 1, maxMana: 25 }, theme: '#3b82f6' },
-  { id: 'ragged_trousers', name: 'Ragged Trousers', description: 'Tattered pants.', type: 'armor', slot: 'legs', icon: '👖', levelReq: 1, stats: { armor: 0, maxMana: 15 }, theme: '#3b82f6' },
-  { id: 'ragged_boots', name: 'Ragged Boots', description: 'Worn out cloth shoes.', type: 'armor', slot: 'feet', icon: '👟', levelReq: 1, stats: { armor: 0, maxMana: 10 }, theme: '#3b82f6' },
+  { id: 'ragged_hood', name: 'Ragged Hood', description: 'Smells of old books.', type: 'armor', slot: 'head', icon: '🧙', levelReq: 1, stats: { armor: 0, maxMana: 15 }, theme: '#3b82f6', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20hood.png' },
+  { id: 'ragged_robe', name: 'Ragged Robe', description: 'Offers little protection.', type: 'armor', slot: 'chest', icon: '👘', levelReq: 1, stats: { armor: 1, maxMana: 25 }, theme: '#3b82f6', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20robe.png' },
+  { id: 'ragged_trousers', name: 'Ragged Trousers', description: 'Tattered pants.', type: 'armor', slot: 'legs', icon: '👖', levelReq: 1, stats: { armor: 0, maxMana: 15 }, theme: '#3b82f6', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20trousers.png' },
+  { id: 'ragged_boots', name: 'Ragged Boots', description: 'Worn out cloth shoes.', type: 'armor', slot: 'feet', icon: '👟', levelReq: 1, stats: { armor: 0, maxMana: 10 }, theme: '#3b82f6', spriteUrl: 'https://raw.githubusercontent.com/MitsuoV/game-assets/refs/heads/main/ragged%20boots.png' },
   { id: 'old_staff', name: 'Old Staff', description: 'Focuses arcane energy.', type: 'weapon', slot: 'mainHand', icon: '🦯', levelReq: 1, classReq: 'Mage', stats: { damage: 2, maxMana: 20 }, theme: '#a855f7' },
 ];
 
